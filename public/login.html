@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Vibe To Watch List</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: var(--surface);
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .login-subtitle {
+            color: #64748b;
+            margin-bottom: 32px;
+            font-size: 1rem;
+        }
+        
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            color: #16a34a;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h1 class="login-title">🔐 Access Required</h1>
+            <p class="login-subtitle">Enter your password to access your watch list</p>
+            
+            <form class="login-form" id="login-form">
+                <div id="error-message" class="error-message"></div>
+                <div id="success-message" class="success-message"></div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password..." autofocus>
+                </div>
+                
+                <button type="submit" id="login-btn">
+                    <span>Access Watch List</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class LoginApp {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                // Check if already logged in
+                if (this.isLoggedIn()) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                document.getElementById('login-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.login();
+                });
+            }
+
+            async login() {
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('login-btn');
+                const errorMsg = document.getElementById('error-message');
+                const successMsg = document.getElementById('success-message');
+
+                // Reset messages
+                errorMsg.style.display = 'none';
+                successMsg.style.display = 'none';
+
+                // Show loading state
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span>Authenticating...</span>';
+
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        // Store token
+                        localStorage.setItem('auth_token', data.token);
+                        
+                        // Show success message
+                        successMsg.textContent = 'Login successful! Redirecting...';
+                        successMsg.style.display = 'block';
+                        
+                        // Redirect after short delay
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
+                    } else {
+                        throw new Error(data.message || 'Login failed');
+                    }
+                } catch (error) {
+                    errorMsg.textContent = error.message || 'Login failed. Please try again.';
+                    errorMsg.style.display = 'block';
+                    
+                    // Reset form
+                    document.getElementById('password').value = '';
+                    document.getElementById('password').focus();
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<span>Access Watch List</span>';
+                }
+            }
+
+            isLoggedIn() {
+                const token = localStorage.getItem('auth_token');
+                return token && token.length > 0;
+            }
+        }
+
+        new LoginApp();
+    </script>
+</body>
+</html>

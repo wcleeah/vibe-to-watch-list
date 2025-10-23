@@ -9,12 +9,15 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { VideosService } from './videos.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
+import { AuthGuard } from '../auth/auth.guard';
 
-@Controller('api/videos')
+@Controller('videos')
+@UseGuards(AuthGuard)
 export class VideosController {
   constructor(private readonly videosService: VideosService) {}
 

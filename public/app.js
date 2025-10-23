@@ -5,8 +5,36 @@ class VideoApp {
     }
 
     init() {
+        // Check authentication first
+        if (!this.isLoggedIn()) {
+            window.location.href = '/login.html';
+            return;
+        }
+
         this.bindEvents();
         this.loadVideos();
+    }
+
+    isLoggedIn() {
+        const token = localStorage.getItem('auth_token');
+        return token && token.length > 0;
+    }
+
+    getAuthHeaders() {
+        const token = localStorage.getItem('auth_token');
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+    }
+
+    async handleAuthError(response) {
+        if (response.status === 401) {
+            localStorage.removeItem('auth_token');
+            window.location.href = '/login.html';
+            return true;
+        }
+        return false;
     }
 
     bindEvents() {
@@ -60,14 +88,15 @@ class VideoApp {
         try {
             const response = await fetch(this.apiBase, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: this.getAuthHeaders(),
                 body: JSON.stringify(videoData)
             });
 
+            if (await this.handleAuthError(response)) return;
+
             if (response.ok) {
                 form.reset();
+                document.getElementById('title-suggestion').style.display = 'none';
                 this.loadVideos();
             } else {
                 const error = await response.json();
@@ -81,9 +110,11 @@ class VideoApp {
     async loadVideos() {
         try {
             const [toWatchResponse, watchedResponse] = await Promise.all([
-                fetch(`${this.apiBase}/to-watch`),
-                fetch(`${this.apiBase}/watched`)
+                fetch(`${this.apiBase}/to-watch`, { headers: this.getAuthHeaders() }),
+                fetch(`${this.apiBase}/watched`, { headers: this.getAuthHeaders() })
             ]);
+
+            if (await this.handleAuthError(toWatchResponse) || await this.handleAuthError(watchedResponse)) return;
 
             const toWatchVideos = await toWatchResponse.json();
             const watchedVideos = await watchedResponse.json();
@@ -147,9 +178,11 @@ class VideoApp {
 
     async markAsWatched(id) {
         try {
-            await fetch(`${this.apiBase}/${id}/watch`, {
-                method: 'PATCH'
+            const response = await fetch(`${this.apiBase}/${id}/watch`, {
+                method: 'PATCH',
+                headers: this.getAuthHeaders()
             });
+            if (await this.handleAuthError(response)) return;
             this.loadVideos();
         } catch (error) {
             alert('Error marking video as watched: ' + error.message);
@@ -158,9 +191,11 @@ class VideoApp {
 
     async markAsUnwatched(id) {
         try {
-            await fetch(`${this.apiBase}/${id}/unwatch`, {
-                method: 'PATCH'
+            const response = await fetch(`${this.apiBase}/${id}/unwatch`, {
+                method: 'PATCH',
+                headers: this.getAuthHeaders()
             });
+            if (await this.handleAuthError(response)) return;
             this.loadVideos();
         } catch (error) {
             alert('Error marking video as unwatched: ' + error.message);
@@ -170,9 +205,11 @@ class VideoApp {
     async deleteVideo(id) {
         if (confirm('Are you sure you want to delete this video?')) {
             try {
-                await fetch(`${this.apiBase}/${id}`, {
-                    method: 'DELETE'
+                const response = await fetch(`${this.apiBase}/${id}`, {
+                    method: 'DELETE',
+                    headers: this.getAuthHeaders()
                 });
+                if (await this.handleAuthError(response)) return;
                 this.loadVideos();
             } catch (error) {
                 alert('Error deleting video: ' + error.message);
@@ -182,7 +219,10 @@ class VideoApp {
 
     async showPreview(id) {
         try {
-            const response = await fetch(`${this.apiBase}/${id}`);
+            const response = await fetch(`${this.apiBase}/${id}`, { 
+                headers: this.getAuthHeaders() 
+            });
+            if (await this.handleAuthError(response)) return;
             const video = await response.json();
             
             const modal = document.getElementById('video-preview-modal');
@@ -349,6 +389,13 @@ class VideoApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('auth_token');
+            window.location.href = '/login.html';
+        }
     }
 }
 
