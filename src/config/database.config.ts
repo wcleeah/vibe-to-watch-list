@@ -8,7 +8,7 @@ export const getDatabaseConfig = (): TypeOrmModuleOptions => {
   if (env === 'production' || process.env.VERCEL) {
     return {
       type: 'postgres',
-      url: process.env.POSTGRES_URL,
+      url: process.env.DATABASE_URL,
       entities: [Video],
       migrations: ['dist/migrations/*.js'],
       synchronize: false,
