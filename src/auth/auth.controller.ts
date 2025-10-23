@@ -12,7 +12,6 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     const { password } = loginDto;
-    console.log(password)
     
     if (!this.authService.validatePassword(password)) {
       throw new UnauthorizedException('Invalid password');
