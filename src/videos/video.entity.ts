@@ -1,31 +1,31 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity('videos')
+@Entity({ name: 'videos' })
 export class Video {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'id' })
   id: number;
 
-  @Column()
+  @Column({ name: 'url', type: 'text' })
   url: string;
 
-  @Column()
+  @Column({ name: 'custom_name', type: 'text' })
   customName: string;
 
-  @Column({ default: false })
+  @Column({ name: 'is_watched', type: 'boolean', default: false })
   isWatched: boolean;
 
-  @Column({ nullable: true })
-  platform: string;
+  @Column({ name: 'platform', type: 'text', nullable: true })
+  platform: string | null;
 
-  @Column({ nullable: true })
-  thumbnailUrl: string;
+  @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
+  thumbnailUrl: string | null;
 
-  @Column({ nullable: true })
-  contentType: string;
+  @Column({ name: 'content_type', type: 'text', nullable: true })
+  contentType: string | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 }
